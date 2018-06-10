@@ -32,16 +32,16 @@ def limit_handled(cursor):
             time.sleep(2 * 60)
              
 # get follow user-id list
-def getFollow(id,name,friends_ids):
-    print("getFollow ID=" + str(id) + ",NAME=" + name)
+def getFriends(id,name,friends_ids):
+    print("getFriends ID=" + str(id) + ",NAME=" + name)
     for friend_id in limit_handled(tweepy.Cursor(api.friends_ids, user_id=id).items()):
         friends_ids.append(friend_id)
 
 # write csv frind data
-def writeFriends(friends_ids,name,f):
+def writeFriends(friends_ids,source_id,source_name,f):
     for i in range(0, len(friends_ids), 100):
         for user in api.lookup_users(user_ids=friends_ids[i:i+100]):
-            linestr = "\""+name+"\",\""+user.name+"\""
+            linestr = str(source_id) + ",\"" + source_name + "\"," + str(user.id) + ",\"" + user.name + "\""
             print(linestr)
             f.write(linestr+"\r\n")
 
@@ -60,25 +60,28 @@ my_info = api.me()
 # open csv with write mode
 f = open('twex.csv', 'w')
 
+f.write("source_id,source_name,target_id,target_name"+"\r\n")
+
 # my friends write csv
 print("myinfo-start")
 friends_ids = []
-getFollow(my_info.id,my_info.name,friends_ids)
-writeFriends(friends_ids,my_info.name,f)
+getFriends(my_info.id,my_info.name,friends_ids)
+writeFriends(friends_ids,my_info.id,my_info.name,f)
 print("myinfo-end")
 
 # A friend of a friend
 for friend_id in friends_ids:
+
     # get user info
     user_info = api.get_user(friend_id)
     print("friend_id="+str(friend_id)+",name="+user_info.name)
     
     # get friend of a friend
     friendsfriends_ids = []
-    getFollow(friend_id,user_info.name,friendsfriends_ids)
+    getFriends(friend_id,user_info.name,friendsfriends_ids)
 
     # write csv
-    writeFriends(friendsfriends_ids,user_info.name,f)
+    writeFriends(friendsfriends_ids,user_info.id,user_info.name,f)
     print("friend_id="+str(friend_id)+" end")
 
 #close
